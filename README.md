@@ -12,7 +12,7 @@ accesses using OAuth2 tokens.
 [The function returns](https://mrkeyvaultdemo.azurewebsites.net/api/GetAADData) a JWT token that can be used 
 in the Authorization header for Microsoft Graph queries against my Azure AD demo tenant.
 ## Setup
-### Function
+### Function App
 1. Publish the code to your Azure App service
 2. In the Platform Features, choose Identity and enable Managed Identity (system assigned)
 3. You wil need to update the Application Settings with data obtained later so you may want to do the rest of the
