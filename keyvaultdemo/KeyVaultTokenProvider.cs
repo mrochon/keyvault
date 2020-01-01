@@ -1,32 +1,36 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Security.Cryptography;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Net.Http;
-using Newtonsoft.Json.Linq;
-using System.Threading.Tasks;
-using System;
 using Newtonsoft.Json;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Extensions.Logging;
-using System.Linq;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace keyvaultdemo
 {
-    public static class KeyVaultExtensions
+    public class KeyVaultTokenProvider
     {
-        // https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow
-        public static async Task<string> AcquireTokenAsync(
-            this KeyVaultClient keyVault,
-            string keyId,
-            string tenantId, 
-            string resourceId, 
-            string appId
-            )
+        readonly KeyVaultClient _kvClient;
+        readonly string _kvName;
+        readonly string _signingKeyId;
+        public KeyVaultTokenProvider(string kvName, string signingKeyId)
         {
-            var jwt = await keyVault.GetJWTUsingX509Async(keyId, tenantId, appId).ConfigureAwait(false);
+            var azureServiceTokenProvider = new AzureServiceTokenProvider();
+            // string accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
+            // OR
+            _kvClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+            _kvName = kvName;
+            _signingKeyId = signingKeyId;
+        }
+        public async Task<string> AcquireTokenAsync(string tenantId, string resourceId, string appId)
+        {
+            var jwt = await GetClientAssertionAsync(tenantId, appId).ConfigureAwait(false);
             var body = $"scope={resourceId}/.default&clientId={appId}&client_assertion_type=urn%3Aietf%3Aparams%3Aoauth%3Aclient-assertion-type%3Ajwt-bearer&client_assertion={jwt}&grant_type=client_credentials";
             var http = new HttpClient();
             http.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
@@ -38,23 +42,20 @@ namespace keyvaultdemo
                 var json = await resp.Content.ReadAsStringAsync();
                 var token = JObject.Parse(json)["access_token"].Value<string>();
                 return token;
-            } else
-            return null;
+            }
+            else
+                return null;
         }
-
         // https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
-        private static async Task<string> GetJWTUsingX509Async(
-            this KeyVaultClient keyVault,
-            string keyId,
-            string tenantId, 
-            string appId)
+        public async Task<string> GetClientAssertionAsync(string tenantId, string appId)
         {
             try
             {
-                //var cert = await keyVault.GetCertificateAsync("https://mrdemokeyvault.vault.azure.net/certificates/func-cred-cert/c700b73e78fd471b9ecacdd2a27a4338").ConfigureAwait(false);
+                var cert = await _kvClient.GetCertificateAsync($"https://{_kvName}.vault.azure.net/certificates/func-cred-cert/{_signingKeyId}").ConfigureAwait(false);
                 //var thumbprint = cert.X509Thumbprint.Aggregate(new StringBuilder(),
                 //               (sb, v) => sb.Append(v.ToString("X2"))).ToString();
-                //var kid = cert.Kid;
+                var x509 = new System.Security.Cryptography.X509Certificates.X509Certificate2(cert.Cer);
+                var jwk = JsonWebKeyConverter.ConvertFromX509SecurityKey(new X509SecurityKey(x509));
                 var token = new JwtSecurityToken(
                     issuer: appId,
                     audience: $"https://login.microsoftonline.com/{tenantId}/oauth2/token",
@@ -69,7 +70,7 @@ namespace keyvaultdemo
                 var header = Base64UrlEncoder.Encode(JsonConvert.SerializeObject(new Dictionary<string, string>()
                 {
                     { JwtHeaderParameterNames.Alg, "RS256" },
-                    { JwtHeaderParameterNames.X5t, Environment.GetEnvironmentVariable("kidValue", EnvironmentVariableTarget.Process) }, // used B2C to get this value; see https://stackoverflow.microsoft.com/questions/179774
+                    { JwtHeaderParameterNames.X5t, jwk.X5t }, // "CM2UiOQMKph-SkcT5_Ejki2Kzik"; initially, used B2C to get this value; see https://stackoverflow.microsoft.com/questions/179774
                     { JwtHeaderParameterNames.Typ, "JWT" }
                 }));
 
@@ -77,9 +78,10 @@ namespace keyvaultdemo
                 var byteData = Encoding.UTF8.GetBytes(unsignedToken);
                 var hasher = new SHA256CryptoServiceProvider();
                 var digest = hasher.ComputeHash(byteData);
-                var signature = await keyVault.SignAsync(keyId, "RS256", digest);
+                var signature = await _kvClient.SignAsync($"https://{_kvName}.vault.azure.net/keys/func-cred-cert/{_signingKeyId}", "RS256", digest);
                 return $"{unsignedToken}.{Base64UrlEncoder.Encode(signature.Result)}";
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return ex.Message;
             }

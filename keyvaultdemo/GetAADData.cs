@@ -22,14 +22,12 @@ namespace keyvaultdemo
         {
             log.LogInformation("Starting.");
 
-            var azureServiceTokenProvider = new AzureServiceTokenProvider();
-            // string accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
-            // OR
-            var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
-            var aadToken = await kv.AcquireTokenAsync(
-                Environment.GetEnvironmentVariable("signingKeyId", EnvironmentVariableTarget.Process),
-                Environment.GetEnvironmentVariable("tenantid", EnvironmentVariableTarget.Process), 
-                "https://graph.microsoft.com",
+            var oauthClient = new KeyVaultTokenProvider(
+                kvName: Environment.GetEnvironmentVariable("keyVaultName", EnvironmentVariableTarget.Process),
+                signingKeyId: Environment.GetEnvironmentVariable("signingKeyId", EnvironmentVariableTarget.Process));
+            var aadToken = await oauthClient.AcquireTokenAsync(
+                Environment.GetEnvironmentVariable("tenantid", EnvironmentVariableTarget.Process),
+                Environment.GetEnvironmentVariable("resourceid", EnvironmentVariableTarget.Process),
                 Environment.GetEnvironmentVariable("appId", EnvironmentVariableTarget.Process));
             return (ActionResult)new OkObjectResult(aadToken);
         }
