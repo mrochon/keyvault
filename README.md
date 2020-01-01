@@ -13,16 +13,17 @@ in the Authorization header for Microsoft Graph queries against my Azure AD demo
 ## Setup
 ### Function
 1. Publish the code to your Azure App service
-2. In the Platform Features, choose Identity and enble Managed Identity (system assigned)
-3. You wil need to update the Application Settings with data obtained in some of the following steps
+2. In the Platform Features, choose Identity and enable Managed Identity (system assigned)
+3. You wil need to update the Application Settings with data obtained later so you may want to do the rest of the
+setup using Azure portal opened in a separate browser window.
 ### KeyVault
 1. Add (generate) a new certificate
 2. In the Advanced Configuration mark the Private Key as non-exportable and disable transparency
 3. In KeyVaults Access Policies, add an Access Policy:
-a) Leave template empty
-b) Grant Key permission to Sign
-c) Grant Certificate permission to Get (needed to get certificate thumbprint in code)
-d) Select Principal, search for the name of your Function App defined above
+3.1. Leave template empty
+3.2. Grant Key permission to Sign
+3.3. Grant Certificate permission to Get (needed to get certificate thumbprint in code)
+3.4. Select Principal, search for the name of your Function App defined above
 4. If you are planning to debug the code from your local machine, add yourself as user as well, with same permissions
 5. Select detail view of your new certificate. From the Key Identifier property extract the last segment (e.g. c700b73e78fd471b9ecacdd2a27a4338)
 and save it as *signingKeyId* in your Function App application settings and *local.settings.json* if you plan to run the code locally
