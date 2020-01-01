@@ -17,13 +17,12 @@ namespace keyvaultdemo
     {
         private static readonly string keyId = "https://mrdemokeyvault.vault.azure.net/keys/func-cred-cert/c700b73e78fd471b9ecacdd2a27a4338";
         private static readonly string appId = "bc2961d0-6dbf-47cc-aa87-893ef0b41fd9";
-        public static ILogger logger;
+
         [FunctionName("GetAADData")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            logger = log;
             log.LogInformation("Starting.");
 
             var azureServiceTokenProvider = new AzureServiceTokenProvider();
