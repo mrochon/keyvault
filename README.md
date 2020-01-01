@@ -4,6 +4,7 @@ from Azure AD. The private key used to sign the client assertion and thus authen
 in the KeyVault and never leaves that service (it is not exportable). This prevents potential credentials theft, which could occur
 if the key was generated outside of the KeyVault and then deployed, read into the function code itself or used directly in the
 assertion as a symmetric key would.
+
 Using [Azure AD Managed Identities](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview), we
 can ensure that only this Function App has access to the signing key in the vault and therefore protect other resources it
 accesses using OAuth2 tokens.
@@ -19,6 +20,7 @@ setup using Azure portal opened in a separate browser window.
 ### KeyVault
 1. Add (generate) a new certificate
 2. In the Advanced Configuration mark the Private Key as non-exportable and disable transparency
+3. Export the public key of the certificate to a local file
 3. In KeyVaults Access Policies, add an Access Policy:
 * Leave template empty
 * Grant Key permission to Sign
@@ -29,6 +31,11 @@ setup using Azure portal opened in a separate browser window.
 and save it as *signingKeyId* in your Function App application settings and *local.settings.json* if you plan to run the code locally
 6. At the same time, set the *keyVaultName* setting to the short name of your key vault (the first segment in the uri).
 ### Azure AD
+>**Note:** creating a Managed Identity for the Function App created an application and service principals in the AAD controlling
+the subscription owning the KeyVault (it does not show in the portal but it is there). 
+It *may* be possible to use that application as OAuth2 client and perform steps 3-5 using that application. You would need to do it using
+PowerShell. I used a different AAD tenant altogether to access Graph so I did not even try this approach.
+
 1. Register a new application in your Azure AD
 2. You do not need to set a reply url - we will only use OAuth2 Client Credentials token in this app
 3. Copy the Application Id given to the app and paste it into the Function App application settings as *appId*.
