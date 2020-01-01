@@ -28,8 +28,6 @@ namespace keyvaultdemo
         {
             var jwt = await keyVault.GetJWTUsingX509Async(keyId, tenantId, appId).ConfigureAwait(false);
             var body = $"scope={resourceId}/.default&clientId={appId}&client_assertion_type=urn%3Aietf%3Aparams%3Aoauth%3Aclient-assertion-type%3Ajwt-bearer&client_assertion={jwt}&grant_type=client_credentials";
-            //return body;
-
             var http = new HttpClient();
             http.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
             var resp = await http.PostAsync(
@@ -40,7 +38,7 @@ namespace keyvaultdemo
                 var json = await resp.Content.ReadAsStringAsync();
                 var token = JObject.Parse(json)["access_token"].Value<string>();
                 return token;
-            }
+            } else
             return null;
         }
 
@@ -53,10 +51,10 @@ namespace keyvaultdemo
         {
             try
             {
-                var cert = await keyVault.GetCertificateAsync("https://mrdemokeyvault.vault.azure.net/certificates/func-cred-cert/c700b73e78fd471b9ecacdd2a27a4338").ConfigureAwait(false);
-                var thumbprint = cert.X509Thumbprint.Aggregate(new StringBuilder(),
-                               (sb, v) => sb.Append(v.ToString("X2"))).ToString();
-                var kid = cert.Kid;
+                //var cert = await keyVault.GetCertificateAsync("https://mrdemokeyvault.vault.azure.net/certificates/func-cred-cert/c700b73e78fd471b9ecacdd2a27a4338").ConfigureAwait(false);
+                //var thumbprint = cert.X509Thumbprint.Aggregate(new StringBuilder(),
+                //               (sb, v) => sb.Append(v.ToString("X2"))).ToString();
+                //var kid = cert.Kid;
                 var token = new JwtSecurityToken(
                     issuer: appId,
                     audience: $"https://login.microsoftonline.com/{tenantId}/oauth2/token",
@@ -71,8 +69,7 @@ namespace keyvaultdemo
                 var header = Base64UrlEncoder.Encode(JsonConvert.SerializeObject(new Dictionary<string, string>()
                 {
                     { JwtHeaderParameterNames.Alg, "RS256" },
-                    { JwtHeaderParameterNames.X5t, "CM2UiOQMKph-SkcT5_Ejki2Kzik" }, // used B2C to get this value; see https://stackoverflow.microsoft.com/questions/179774
-                    //{ JwtHeaderParameterNames.Kid, thumbprint },
+                    { JwtHeaderParameterNames.X5t, Environment.GetEnvironmentVariable("kidValue", EnvironmentVariableTarget.Process) }, // used B2C to get this value; see https://stackoverflow.microsoft.com/questions/179774
                     { JwtHeaderParameterNames.Typ, "JWT" }
                 }));
 
