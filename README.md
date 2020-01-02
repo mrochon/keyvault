@@ -31,10 +31,10 @@ setup using Azure portal opened in a separate browser window.
 and save it as *signingKeyId* in your Function App application settings and *local.settings.json* if you plan to run the code locally
 6. At the same time, set the *keyVaultName* setting to the short name of your key vault (the first segment in the uri).
 ### Azure AD
->**Note:** creating a Managed Identity for the Function App created an application and service principals in the AAD controlling
+>**Note:** creating a Managed Identity for the Function App created service principal in the AAD controlling
 the subscription owning the KeyVault (it does not show in the portal but it is there). 
-It *may* be possible to use that application as OAuth2 client and perform steps 3-5 using that application. You would need to do it using
-PowerShell. I used a different AAD tenant altogether to access Graph so I did not even try this approach.
+However, you cannot use that application to assign to it permissions to access other APIs. You will need to create a new application.
+The new application may even be defined in a different AAD tenant (as in my case).
 
 1. Register a new application in your Azure AD
 2. You do not need to set a reply url - we will only use OAuth2 Client Credentials token in this app
