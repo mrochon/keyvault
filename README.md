@@ -1,6 +1,11 @@
 # Using Azure KeyVault for OAuth2 client creds
-This sample implements an Azure Function App, which uses Azure KeyVault to sign OAuth2 client assertions used to obtain JWT tokens
-from Azure AD. The private key used to sign the client assertion and thus authenticate the function to Azure AD is generated
+This sample implements an Azure Function App using Managed Identity to obtain an access token to an API. Obtaining access tokens from Azure AD is [well documented](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols) when using regular application identities. However, use of Managed Identities is well documented only when used for [obtaining access to selected Azure services](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-can-i-use-managed-identities-for-azure-resources). This sample was developed to show how to accomplish this task for other resources, e.g. Graph API or your own API. It uses Azure KeyVault, which is one of the services accessible directly with a Managed Identity to provide a secure path from the Managed Identity to a regular identity used in typical scenarios. 
+
+**Since writing this sample I have discovered that Managed Identities can be used directly to obtain OAuth2 access tokens to any API registered in AzureAD [Graph or custom](https://stackoverflow.com/questions/48013011/msi-permissions-for-graph-api/48014153#48014153).Since Managed Identities are implemented as AzureAD applications and service principals. However, they are not exposed as such through the Azure AD portal. Therefore, their access to Graph or custom APIs has to be configured through an API: MS Graph (or PowerShell).**
+
+This uses a more complex approach. I am leaving it here for a while to make sure my correction is seen by those who may have bookmarked this page.
+
+The private key used to sign the client assertion and thus authenticate the function to Azure AD is generated
 in the KeyVault and never leaves that service (it is not exportable). This prevents potential credentials theft, which could occur
 if the key was generated outside of the KeyVault and then deployed, read into the function code itself or used directly in the
 assertion as a symmetric key would.
