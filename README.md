@@ -2,7 +2,7 @@
 This sample implements an Azure Function App using Managed Identity to obtain an access token to an API. Obtaining access tokens from Azure AD is [well documented](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols) when using regular application identities. However, use of Managed Identities is well documented only when used for [obtaining access to selected Azure services](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-can-i-use-managed-identities-for-azure-resources). This sample was developed to show how to accomplish this task for other resources, e.g. Graph API or your own API. It uses Azure KeyVault, which is one of the services accessible directly with a Managed Identity to provide a secure path from the Managed Identity to a regular identity used in typical scenarios. 
 
 **Since writing this sample I have discovered that Managed Identities can be used directly to obtain OAuth2 access tokens to any API registered in 
-AzureAD [Graph or custom](https://stackoverflow.com/questions/48013011/msi-permissions-for-graph-api/48014153#48014153). Managed Identities are 
+AzureAD [Graph or custom](https://docs.microsoft.com/en-us/azure/app-service/scenario-secure-app-access-microsoft-graph-as-app?tabs=azure-powershell%2Ccommand-line). Managed Identities are 
 implemented as AzureAD applications and service principals. However, they are not exposed as such through the Azure AD portal. Therefore, 
 their access to Graph or custom APIs has to be configured through an API: MS Graph (or PowerShell). See the new [sample code](). Startup.cs includes the PS script**
 
